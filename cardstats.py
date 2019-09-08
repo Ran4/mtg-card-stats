@@ -24,6 +24,40 @@ def _update_section(current_section: str, line: str) -> str:
 def _looks_like_comment(s: str) -> bool:
     return s.strip().startswith("#")
 
+def calculate_cmc(cmc_section: str) -> int:
+    """
+    "U" -> 1
+    "3U" -> 4
+    """
+    return len(
+        cmc_section
+            .lower()
+            .replace("x", "")
+            .replace("2", "x" * 2)
+            .replace("3", "x" * 3)
+            .replace("4", "x" * 4)
+            .replace("5", "x" * 5)
+            .replace("6", "x" * 6)
+            .replace("7", "x" * 7)
+            .replace("8", "x" * 8)
+    )
+
+def print_mana_curve(cmc_counter) -> None:
+    """
+      ***
+    * ***  *
+    *****  *
+    012345678
+    """
+    highest_cmc = max(cmc_counter.keys())
+    max_count = max(cmc_counter.values())
+    
+    for count in range(max_count, 0, -1):
+        print(" ".join(["*" if count <= cmc_counter[cmc] else " "
+                       for cmc in range(0, highest_cmc+1)]))
+            
+    print(" ".join(map(str, range(highest_cmc + 1))))
+
 def print_numbers(filename: str) -> None:
     """
     Prints statistics of a magic card decklist, which must be formatted like:
@@ -62,6 +96,7 @@ Lands:
     section: str = "other"
     counter: Counter = Counter()
     deck: List[str] = []
+    cmc_counter = Counter()
     
     with open(filename) as f:
         lines = [x.strip() for x in f.read().split("\n")]
@@ -78,6 +113,9 @@ Lands:
         if matches:
             amount: int = int(matches.groups()[0].strip())
             card_name: str = matches.groups()[1].strip()
+            cmc_section: str = card_name.split(" ")[-1]
+            cmc: int = calculate_cmc(cmc_section)
+            cmc_counter[cmc] += 1
             print(f"\t{amount}x {card_name}")
             counter[section] += amount
             [deck.append(card_name) for _ in range(amount)]
@@ -85,6 +123,8 @@ Lands:
             pass
             #~ print(stripped_line)
             
+    print("---")
+    print_mana_curve(cmc_counter)
     print("---")
     total_count = sum(counter.values())
     
